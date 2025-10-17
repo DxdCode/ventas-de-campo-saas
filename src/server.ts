@@ -1,26 +1,21 @@
+import "reflect-metadata"; 
+import { connectToDatabase } from "config";
+import express from "express";
+const app = express();
+app.use(express.json());
 
-import { connectToDatabase } from './config';
-import express from 'express'
-
-// Crear la aplicación Express
-const app = express()
-
-// Middleware para usar JSON
-app.use(express.json())
-
-// Puerto
 const PORT = process.env.PORT || 3000;
 
-// Ejemplo de ruta
 app.get("/", (req, res) => {
-  res.send("Servidor activo y conectado a la base de datos");
+  res.json({ 
+    message: "Servidor activo y conectado a la base de datos",
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Verificamos
-export const startServer = async () => {
+const startServer = async () => {
   try {
     await connectToDatabase();
-
     app.listen(PORT, () => {
       console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });

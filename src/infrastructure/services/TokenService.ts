@@ -1,13 +1,25 @@
-import { Repository } from "typeorm";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "@shared/utils/jwt";
-import { TokenEntity } from "@domain/entities/auth/TokenEntity";
 import { UserEntity } from "@domain/entities/user/UserEntity";
+import { UserRepository } from "@infrastructure/repositories/user/UserRepository";
+
+interface JwtPayload {
+    id: number;
+    email: string;
+    role: string;
+}
 
 export class TokenService {
-    constructor(private tokenRepository: Repository<TokenEntity>) { }
+    private REFRESH_TOKEN_EXP_MS = 7 * 24 * 60 * 60 * 1000; // 7 días
 
+    constructor(private userRepository: UserRepository) {}
+
+    // Genera access y refresh tokens para un usuario y guarda el refresh token en DB
     async generateTokens(user: UserEntity) {
-        const payload = {
+        if (!user.rol || !user.rol.nombre) {
+            throw new Error("El usuario no tiene un rol asignado");
+        }
+
+        const payload: JwtPayload = {
             id: user.id,
             email: user.email,
             role: user.rol.nombre,
@@ -16,49 +28,43 @@ export class TokenService {
         const accessToken = generateAccessToken(payload);
         const refreshToken = generateRefreshToken(payload);
 
-        // Guardar refresh token en BD
-        const tokenEntity = new TokenEntity();
-        tokenEntity.refreshToken = refreshToken;
-        tokenEntity.expiracion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        tokenEntity.usuario = user;
-
-        await this.tokenRepository.save(tokenEntity);
+        // Guardar refresh token usando UserRepository
+        const expiracion = new Date(Date.now() + this.REFRESH_TOKEN_EXP_MS);
+        await this.userRepository.addRefreshToken(user.id, refreshToken, expiracion);
 
         return { accessToken, refreshToken };
     }
 
+    // Revocar refresh token
     async revokeRefreshToken(token: string) {
-        await this.tokenRepository.delete({ refreshToken: token });
+        await this.userRepository.removeRefreshToken(token);
     }
 
+    // Verifica refresh token y genera nuevos tokens
     async verifyAndRefresh(refreshToken: string) {
+        let payload: JwtPayload;
+
         try {
-            // Verificar JWT y obtener payload
-            const payload: any = verifyRefreshToken(refreshToken);
-
-            // Buscar token en base para validar que existe y no expiró
-            const tokenEntity = await this.tokenRepository.findOne({
-                where: { refreshToken },
-                relations: ["usuario", "usuario.rol"],
-            });
-
-            if (!tokenEntity) throw new Error("Refresh token inválido");
-
-            if (tokenEntity.expiracion < new Date()) {
-                await this.tokenRepository.delete({ id: tokenEntity.id });
-                throw new Error("Refresh token expirado");
-            }
-
-            // Generar nuevos tokens
-            const user = tokenEntity.usuario;
-            const newTokens = await this.generateTokens(user);
-
-            // Eliminar token viejo
-            await this.tokenRepository.delete({ id: tokenEntity.id });
-
-            return newTokens;
-        } catch (error) {
-            throw new Error("Refresh token inválido o expirado");
+            payload = verifyRefreshToken(refreshToken) as JwtPayload;
+        } catch {
+            throw new Error("Refresh token inválido");
         }
+
+        // Buscar token en DB usando UserRepository
+        const tokenEntity = await this.userRepository.findRefreshToken(refreshToken);
+        if (!tokenEntity) throw new Error("Refresh token no encontrado");
+
+        if (tokenEntity.expiracion < new Date()) {
+            await this.userRepository.removeRefreshToken(refreshToken);
+            throw new Error("Refresh token expirado");
+        }
+
+        const user = tokenEntity.usuario;
+        const newTokens = await this.generateTokens(user);
+
+        // Eliminar token viejo
+        await this.userRepository.removeRefreshToken(refreshToken);
+
+        return newTokens;
     }
 }

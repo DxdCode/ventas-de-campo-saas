@@ -12,7 +12,7 @@ export class TokenEntity {
   @Column()
   expiracion!: Date;
 
-  @ManyToOne(() => UserEntity, user => user.tokens)
+  @ManyToOne(() => UserEntity, user => user.tokens,  { eager: true })
   @JoinColumn({ name: "usuario_id" })
   usuario!: UserEntity;
 }

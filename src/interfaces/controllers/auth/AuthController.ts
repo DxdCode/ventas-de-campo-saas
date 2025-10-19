@@ -1,36 +1,34 @@
 import { Request, Response } from "express";
-import { RegisterUserUseCase } from "@application/usecases/auth/CreateUserUseCase";
+import { injectable, inject } from "tsyringe";
+import { RegisterUserUseCase } from "@application/usecases/auth/RegisterUserUseCase";
 import { LoginUserUseCase } from "@application/usecases/auth/LoginUserUseCase";
 
+@injectable()
 export class AuthController {
     constructor(
-        private registerUseCase: RegisterUserUseCase,
-        private loginUseCase: LoginUserUseCase
+        @inject(RegisterUserUseCase) private registerUseCase: RegisterUserUseCase,
+        @inject(LoginUserUseCase) private loginUseCase: LoginUserUseCase
     ) { }
 
-    register = async(req: Request, res: Response) => {
+    // Maneja el registro de usuarios
+    register = async (req: Request, res: Response) => {
         try {
             const user = await this.registerUseCase.execute(req.body);
-            return res.status(201).json({
-                message: "Usuario registrado correctamente",
-                user: { id: user.id, name: user.name, email: user.email },
-            });
-        } catch (err: any) {
-            return res.status(400).json({ message: err.message });
+            return res.status(201).json(user);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Error desconocido";
+            return res.status(400).json({ message });
         }
-    }
+    };
 
-    login = async(req: Request, res: Response) => {
+    // Maneja el login de usuarios
+    login = async (req: Request, res: Response) => {
         try {
-            const result = await this.loginUseCase.execute(req.body);
-            const {user, ...tokens} = result
-            return res.status(200).json({
-                message: "Usuario autenticado correctamente",
-                user,
-                ...tokens,
-            });
-        } catch (err: any) {
-            return res.status(400).json({ message: err.message });
+            const data = await this.loginUseCase.execute(req.body);
+            return res.status(200).json(data);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Error desconocido";
+            return res.status(400).json({ message });
         }
-    }
+    };
 }

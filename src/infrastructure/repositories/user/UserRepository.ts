@@ -1,45 +1,49 @@
+import { injectable, inject } from "tsyringe";
+import { DataSource } from "typeorm";
 import { CreateUserWithRoleDTO } from "@application/dtos/user/UserDTO";
-import { TokenEntity } from "@domain/entities/auth/TokenEntity";
 import { UserEntity } from "@domain/entities/user/UserEntity";
-import { AppDataSource } from "config";
+import { TokenEntity } from "@domain/entities/auth/TokenEntity";
+import { IUserRepository } from "@application/ports/role/IUserRepository";
 
-export class UserRepository {
-    // Crear usuario
+// Implementación del repositorio de usuarios y tokens usando TypeORM
+@injectable()
+export class UserRepository implements IUserRepository {
+    private userRepo;
+    private tokenRepo;
+
+    constructor(@inject("DataSource") private dataSource: DataSource) {
+        this.userRepo = this.dataSource.getRepository(UserEntity);
+        this.tokenRepo = this.dataSource.getRepository(TokenEntity);
+    }
+
+    // Crea y guarda un nuevo usuario con rol
     async create(data: CreateUserWithRoleDTO): Promise<UserEntity> {
-        const repo = AppDataSource.getRepository(UserEntity);
-        const user = repo.create(data)
-        return await repo.save(user);
+        const user = this.userRepo.create(data);
+        return await this.userRepo.save(user);
     }
 
-    // Buscar usuario por email
+    // Busca un usuario por email
     async findByEmail(email: string): Promise<UserEntity | null> {
-        const repo = AppDataSource.getRepository(UserEntity);
-        return await repo.findOne({ where: { email } })
+        return await this.userRepo.findOne({ where: { email } });
     }
 
-    // Guardar un refresh token para un usuario
+    // Agrega un token de refresco para un usuario con fecha de expiración
     async addRefreshToken(userId: number, refreshToken: string, expiracion: Date): Promise<TokenEntity> {
-        const tokenRepo = AppDataSource.getRepository(TokenEntity);
-
-        const token = tokenRepo.create({
+        const token = this.tokenRepo.create({
             refreshToken,
             expiracion,
-            usuario: { id: userId }, 
+            usuario: { id: userId },
         });
-
-        return await tokenRepo.save(token);
+        return await this.tokenRepo.save(token);
     }
 
-    // Eliminar un refresh token 
+    // Elimina un token de refresco específico
     async removeRefreshToken(refreshToken: string): Promise<void> {
-        const tokenRepo = AppDataSource.getRepository(TokenEntity);
-        await tokenRepo.delete({ refreshToken });
+        await this.tokenRepo.delete({ refreshToken });
     }
 
-    // Buscar refresh token en DB
+    // Busca un token de refresco por valor
     async findRefreshToken(refreshToken: string): Promise<TokenEntity | null> {
-        const tokenRepo = AppDataSource.getRepository(TokenEntity);
-        return await tokenRepo.findOne({ where: { refreshToken }});
+        return await this.tokenRepo.findOne({ where: { refreshToken } });
     }
-
 }

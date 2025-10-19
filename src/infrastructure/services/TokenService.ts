@@ -1,6 +1,7 @@
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "@shared/utils/jwt";
+import { injectable, inject } from "tsyringe";
+import { IUserRepository } from "@application/ports/role/IUserRepository";
 import { UserEntity } from "@domain/entities/user/UserEntity";
-import { UserRepository } from "@infrastructure/repositories/user/UserRepository";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "@shared/utils/jwt";
 
 interface JwtPayload {
     id: number;
@@ -8,12 +9,14 @@ interface JwtPayload {
     role: string;
 }
 
+// Servicio para manejar generación, verificación y revocación de tokens JWT
+@injectable()
 export class TokenService {
     private REFRESH_TOKEN_EXP_MS = 7 * 24 * 60 * 60 * 1000; // 7 días
 
-    constructor(private userRepository: UserRepository) {}
+    constructor(@inject("IUserRepository") private userRepository: IUserRepository) { }
 
-    // Genera access y refresh tokens para un usuario y guarda el refresh token en DB
+    // Genera y guarda tokens de acceso y refresco para el usuario
     async generateTokens(user: UserEntity) {
         if (!user.rol || !user.rol.nombre) {
             throw new Error("El usuario no tiene un rol asignado");
@@ -28,19 +31,18 @@ export class TokenService {
         const accessToken = generateAccessToken(payload);
         const refreshToken = generateRefreshToken(payload);
 
-        // Guardar refresh token usando UserRepository
         const expiracion = new Date(Date.now() + this.REFRESH_TOKEN_EXP_MS);
         await this.userRepository.addRefreshToken(user.id, refreshToken, expiracion);
 
         return { accessToken, refreshToken };
     }
 
-    // Revocar refresh token
+    // Revoca (elimina) un token de refresco
     async revokeRefreshToken(token: string) {
         await this.userRepository.removeRefreshToken(token);
     }
 
-    // Verifica refresh token y genera nuevos tokens
+    // Verifica un refresh token, lo renueva y genera nuevos tokens
     async verifyAndRefresh(refreshToken: string) {
         let payload: JwtPayload;
 
@@ -50,7 +52,6 @@ export class TokenService {
             throw new Error("Refresh token inválido");
         }
 
-        // Buscar token en DB usando UserRepository
         const tokenEntity = await this.userRepository.findRefreshToken(refreshToken);
         if (!tokenEntity) throw new Error("Refresh token no encontrado");
 
@@ -62,7 +63,6 @@ export class TokenService {
         const user = tokenEntity.usuario;
         const newTokens = await this.generateTokens(user);
 
-        // Eliminar token viejo
         await this.userRepository.removeRefreshToken(refreshToken);
 
         return newTokens;

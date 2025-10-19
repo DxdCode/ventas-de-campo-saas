@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
 import { UserEntity } from "../user/UserEntity";
 
+// Definicion de la entidad tokens
 @Entity("tokens")
 export class TokenEntity {
   @PrimaryGeneratedColumn()

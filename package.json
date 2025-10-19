@@ -1,5 +1,5 @@
 {
-  "name": "tiendaonline",
+  "name": "ventas-de-campo-saas",
   "version": "1.0.0",
   "description": "Backend TypeScript con MySQL y TypeORM",
   "main": "dist/server.js",
@@ -15,7 +15,8 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.15.2",
-    "reflect-metadata": "^0.1.13",
+    "reflect-metadata": "^0.1.14",
+    "tsyringe": "^4.10.0",
     "typeorm": "^0.3.17",
     "zod": "^4.1.12"
   },

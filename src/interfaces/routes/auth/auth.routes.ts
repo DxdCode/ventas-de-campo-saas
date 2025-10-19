@@ -1,24 +1,18 @@
-import { RegisterUserUseCase } from "@application/usecases/auth/CreateUserUseCase";
-import { LoginUserUseCase } from "@application/usecases/auth/LoginUserUseCase";
-import { UserRepository } from "@infrastructure/repositories/user/UserRepository";
-import { TokenService } from "@infrastructure/services/TokenService";
+import "@infrastructure/container";
+import { container } from "tsyringe";
+import { Router } from "express";
 import { AuthController } from "@interfaces/controllers/auth/AuthController";
 import { validate } from "@interfaces/middlewares/validateMiddleware";
 import { loginSchema } from "@interfaces/validators/auth/LoginValidator";
 import { registerSchema } from "@interfaces/validators/auth/registerValidator";
-import { Router } from "express";
 
 const routes = Router();
+const authController = container.resolve(AuthController);
 
-// Instancias
-const userRepository = new UserRepository();
-const tokenService = new TokenService(userRepository); 
-const registerUseCase = new RegisterUserUseCase(userRepository);
-const loginUseCase = new LoginUserUseCase(userRepository, tokenService);
-const authController = new AuthController(registerUseCase, loginUseCase);
+// Ruta para registrar usuarios con validación del body
+routes.post("/register", validate(registerSchema), authController.register);
 
-// Rutas
-routes.post("/register", validate(registerSchema), (req, res) => authController.register(req, res));
-routes.post("/login", validate(loginSchema), (req, res) => authController.login(req, res));
+// Ruta para login de usuarios con validación del body
+routes.post("/login", validate(loginSchema), authController.login);
 
 export default routes;

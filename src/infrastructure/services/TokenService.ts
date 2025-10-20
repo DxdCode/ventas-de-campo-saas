@@ -3,7 +3,7 @@ import { IUserRepository } from "@application/ports/role/IUserRepository";
 import { UserEntity } from "@domain/entities/user/UserEntity";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "@shared/utils/jwt";
 
-interface JwtPayload {
+export interface JwtPayload {
     id: number;
     email: string;
     role: string;

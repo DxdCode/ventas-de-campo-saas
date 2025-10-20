@@ -15,4 +15,7 @@ routes.post("/register", validate(registerSchema), authController.register);
 // Ruta para login de usuarios con validación del body
 routes.post("/login", validate(loginSchema), authController.login);
 
+// Ruta para refresh token
+routes.post("/refresh-token",authController.refreshToken);
+
 export default routes;

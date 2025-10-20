@@ -10,6 +10,7 @@ import { LoginUserUseCase } from "@application/usecases/auth/LoginUserUseCase";
 
 import { TokenService } from "@infrastructure/services/TokenService";
 import { AppDataSource } from "config";
+import { AdminUserUseCase } from "@application/usecases/auth/AdminUserUseCase";
 
 // Registro de la instancia de la fuente de datos para inyección
 container.registerInstance("DataSource", AppDataSource);
@@ -32,6 +33,9 @@ container.register(LoginUserUseCase, {
     useClass: LoginUserUseCase,
 });
 
+container.register(AdminUserUseCase,{
+    useClass: AdminUserUseCase,
+})
 // Registro singleton para el servicio de tokens
 container.registerSingleton(TokenService);
 

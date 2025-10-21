@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, DeleteDateColumn } from "typeorm";
 import { RoleEntity } from "./RoleEntity";
 import { TokenEntity } from "../auth/TokenEntity";
 
@@ -23,4 +23,10 @@ export class UserEntity {
 
     @OneToMany(() => TokenEntity, token => token.usuario)
     tokens!: TokenEntity[];
+
+    @Column({ default: true })
+    isActive!: boolean;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 }

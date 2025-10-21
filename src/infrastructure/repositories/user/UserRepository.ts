@@ -1,6 +1,6 @@
 import { injectable, inject } from "tsyringe";
 import { DataSource } from "typeorm";
-import { CreateUserWithRoleDTO } from "@application/dtos/user/UserDTO";
+import { CreateUserWithRoleDTO, UpdateUserStatusDTO } from "@application/dtos/user/UserDTO";
 import { UserEntity } from "@domain/entities/user/UserEntity";
 import { TokenEntity } from "@domain/entities/auth/TokenEntity";
 import { IUserRepository } from "@application/ports/role/IUserRepository";
@@ -25,6 +25,34 @@ export class UserRepository implements IUserRepository {
     // Busca un usuario por email
     async findByEmail(email: string): Promise<UserEntity | null> {
         return await this.userRepo.findOne({ where: { email } });
+    }
+
+    async findById(id: number): Promise<UserEntity | null> {
+        return await this.userRepo.findOne({ where: { id } });
+    }
+
+    async updateStatus(id: number, data: UpdateUserStatusDTO): Promise<UserEntity | null> {
+        await this.userRepo.update(id, data);
+        return this.findById(id);
+    }
+
+    async softDelete(id: number): Promise<void> {
+        await this.userRepo.softDelete(id);
+    }
+
+    async hardDelete(id: number): Promise<void> {
+        await this.userRepo.delete(id);
+    }
+
+    async findAll(includeInactive: boolean = false): Promise<UserEntity[]> {
+        if (includeInactive) {
+            return await this.userRepo.find({
+                withDeleted: true
+            });
+        }
+        return await this.userRepo.find({
+            where: { isActive: true }
+        });
     }
 
     // Agrega un token de refresco para un usuario con fecha de expiración

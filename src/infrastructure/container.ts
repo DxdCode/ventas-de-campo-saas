@@ -10,7 +10,7 @@ import { LoginUserUseCase } from "@application/usecases/auth/LoginUserUseCase";
 
 import { TokenService } from "@infrastructure/services/TokenService";
 import { AppDataSource } from "config";
-import { AdminUserUseCase } from "@application/usecases/auth/AdminUserUseCase";
+import { AdminUserUseCase } from "@application/usecases/admin/AdminUserUseCase";
 
 // Registro de la instancia de la fuente de datos para inyección
 container.registerInstance("DataSource", AppDataSource);

@@ -41,6 +41,7 @@ export class UserRepository implements IUserRepository {
     }
 
     async hardDelete(id: number): Promise<void> {
+        await this.tokenRepo.delete({ usuario: { id } });
         await this.userRepo.delete(id);
     }
 

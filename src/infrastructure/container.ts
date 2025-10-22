@@ -11,6 +11,9 @@ import { LoginUserUseCase } from "@application/usecases/auth/LoginUserUseCase";
 import { TokenService } from "@infrastructure/services/TokenService";
 import { AppDataSource } from "config";
 import { AdminUserUseCase } from "@application/usecases/admin/AdminUserUseCase";
+import { IRouteRepository } from "@application/ports/route/IRouteRepository";
+import { RouteRepository } from "./repositories/route/RouteRepository";
+import { RouteUseCase } from "@application/usecases/route/RouteUseCase";
 
 // Registro de la instancia de la fuente de datos para inyección
 container.registerInstance("DataSource", AppDataSource);
@@ -35,7 +38,17 @@ container.register(LoginUserUseCase, {
 
 container.register(AdminUserUseCase,{
     useClass: AdminUserUseCase,
-})
+});
+
+// Registro del repositorio de rutas y su caso de uso
+container.register<IRouteRepository>("IRouteRepository", {
+    useClass: RouteRepository,
+});
+
+container.register(RouteUseCase, {
+    useClass: RouteUseCase,
+});
+
 // Registro singleton para el servicio de tokens
 container.registerSingleton(TokenService);
 

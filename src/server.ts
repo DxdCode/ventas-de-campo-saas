@@ -5,8 +5,7 @@ import authRoutes from "@interfaces/routes/auth/auth.routes";
 import adminRoutes from "@interfaces/routes/admin/admin.routes";
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import dotenv from 'dotenv';
-
+import dotenv from 'dotenv'
 dotenv.config(); 
 
 const app = express();

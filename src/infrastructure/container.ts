@@ -15,6 +15,11 @@ import { IRouteRepository } from "@application/ports/route/IRouteRepository";
 import { RouteRepository } from "./repositories/route/RouteRepository";
 import { RouteUseCase } from "@application/usecases/route/RouteUseCase";
 
+import { IProductRepository } from "@application/ports/product/IProductRepository";
+import { ProductRepository } from "./repositories/product/ProductRepository";
+import { ProductUseCase } from "@application/usecases/product/ProductUseCase";
+
+
 // Registro de la instancia de la fuente de datos para inyección
 container.registerInstance("DataSource", AppDataSource);
 
@@ -48,6 +53,16 @@ container.register<IRouteRepository>("IRouteRepository", {
 container.register(RouteUseCase, {
     useClass: RouteUseCase,
 });
+
+// Registro del repositorio de productos y su caso de uso
+container.register<IProductRepository>("IProductRepository", {
+    useClass: ProductRepository,
+});
+
+container.register(ProductUseCase, {
+    useClass: ProductUseCase,
+});
+
 
 // Registro singleton para el servicio de tokens
 container.registerSingleton(TokenService);

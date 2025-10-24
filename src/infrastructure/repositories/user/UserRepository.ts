@@ -11,7 +11,7 @@ export class UserRepository implements IUserRepository {
     private userRepo;
     private tokenRepo;
 
-    constructor(@inject("DataSource") private dataSource: DataSource) {
+    constructor(@inject("DataSource") private readonly dataSource: DataSource) {
         this.userRepo = this.dataSource.getRepository(UserEntity);
         this.tokenRepo = this.dataSource.getRepository(TokenEntity);
     }

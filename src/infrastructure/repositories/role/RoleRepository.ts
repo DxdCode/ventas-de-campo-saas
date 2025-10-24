@@ -8,7 +8,7 @@ import { IRoleRepository } from "@application/ports/user/IRoleRepository";
 export class RoleRepository implements IRoleRepository {
     private repo;
 
-    constructor(@inject("DataSource") private dataSource: DataSource) {
+    constructor(@inject("DataSource")  private readonly dataSource: DataSource) {
         // Obtener repositorio específico para RoleEntity
         this.repo = this.dataSource.getRepository(RoleEntity);
     }

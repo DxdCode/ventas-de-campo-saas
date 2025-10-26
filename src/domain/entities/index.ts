@@ -1,3 +1,4 @@
+import { AuthEntity } from "./auth/AuthEntity";
 import { TokenEntity } from "./auth/TokenEntity";
 import { ProductEntity } from "./product/ProductEntity";
 import { RouteEntity } from "./route/RouteEntity";
@@ -10,5 +11,6 @@ export const entities = [
     RoleEntity,
     TokenEntity,
     RouteEntity,
-    ProductEntity
+    ProductEntity,
+    AuthEntity
 ]

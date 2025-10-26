@@ -1,10 +1,9 @@
 import { injectable, inject } from "tsyringe";
-import { TokenService } from "@infrastructure/services/TokenService";
+import { AuthRepository } from "@infrastructure/repositories/auth/AuthRepository";
 import { LoginDTO } from "@application/dtos/auth/LoginDTO";
 import { verifyPassword } from "@shared/utils/hash";
-import { AuthRepository } from "@infrastructure/repositories/auth/AuthRepository";
+import { TokenService } from "@infrastructure/services/TokenService";
 
-// Caso de uso para autenticar usuarios y generar tokens JWT
 @injectable()
 export class LoginUserUseCase {
   constructor(
@@ -24,10 +23,9 @@ export class LoginUserUseCase {
     // Actualizar último login
     await this.authRepository.updateLastLogin(auth.id);
 
-    // Generar tokens de acceso y refresco
-    const tokens = await this.tokenService.generateTokens(auth.user);
+    // Generar tokens
+    const tokens = await this.tokenService.generateTokensFromAuth(auth);
 
-    // Retornar información básica del usuario junto con los tokens
     return {
       user: {
         name: auth.user.name,

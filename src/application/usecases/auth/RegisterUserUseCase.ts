@@ -1,8 +1,8 @@
 import { injectable, inject } from "tsyringe";
 import { CreateUserDTO } from "@application/dtos/user/UserDTO";
 import { hashPassword } from "@shared/utils/hash";
-import { IUserRepository } from "@application/ports/role/IUserRepository";
-import { IRoleRepository } from "@application/ports/user/IRoleRepository";
+import { IUserRepository } from "@application/ports/user/IUserRepository";
+import { IRoleRepository } from "@application/ports/role/IRoleRepository";
 import { AuthRepository } from "@infrastructure/repositories/auth/AuthRepository";
 
 // Caso de uso para registrar un nuevo usuario con rol por defecto "cliente"

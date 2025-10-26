@@ -1,55 +1,60 @@
 import { injectable, inject } from "tsyringe";
-import { IUserRepository } from "@application/ports/role/IUserRepository";
-import { IRoleRepository } from "@application/ports/user/IRoleRepository";
+import { IUserRepository } from "@application/ports/user/IUserRepository";
+import { IRoleRepository } from "@application/ports/role/IRoleRepository";
 import { CreateUserWithRoleDTO, UpdateUserStatusDTO, UserResponseDTO } from "@application/dtos/user/UserDTO";
 import { hashPassword } from "@shared/utils/hash";
+import { IAuthRepository } from "@application/ports/user/IAuthRepository";
 
 @injectable()
 export class AdminUserUseCase {
     constructor(
         @inject("IUserRepository") private userRepository: IUserRepository,
-        @inject("IRoleRepository") private roleRepository: IRoleRepository
-    ) {}
+        @inject("IRoleRepository") private roleRepository: IRoleRepository,
+        @inject("AuthRepository") private authRepository: IAuthRepository
+    ) { }
 
-    // Crear usuario con rol (acción de administrador)
+    // Crear usuario con rol
     async createUser(data: CreateUserWithRoleDTO): Promise<UserResponseDTO> {
-        // Verificar si el rol existe
         const role = await this.roleRepository.findByName(data.rol.nombre);
         if (!role) throw new Error("Rol no encontrado");
 
-        // Verificar si el usuario ya existe
-        const existUser = await this.userRepository.findByEmail(data.email);
-        if (existUser)
-            throw new Error(`El usuario con email ${data.email} ya existe con el nombre ${existUser.name} y ID ${existUser.id}`);
+        const existingAuth = await this.authRepository.findByEmail(data.email);
+        if (existingAuth) throw new Error(`El email ${data.email} ya está registrado.`);
 
-        // Hashear la contraseña
         const hashedPassword = await hashPassword(data.password);
 
-        // Crear usuario
-        const newUser = await this.userRepository.create({
-            ...data,
+        const user = await this.userRepository.create({
+            name: data.name,
+            email: data.email,
             password: hashedPassword,
-            rol: role
+            rol: role,
         });
 
-        // Retornar como UserResponseDTO
+        await this.authRepository.create({
+            user,
+            email: data.email,
+            password: hashedPassword
+        });
+
         return {
-            id: newUser.id,
-            name: newUser.name,
-            email: newUser.email,
-            isActive: newUser.isActive,
-            rol: newUser.rol,
-            deletedAt: newUser.deletedAt
+            id: user.id,
+            name: user.name,
+            email: data.email,
+            isActive: user.isActive,
+            rol: user.rol,
+            deletedAt: user.deletedAt
         };
     }
 
     // Listar todos los usuarios
     async getAllUsers(includeInactive: boolean = false): Promise<UserResponseDTO[]> {
         const users = await this.userRepository.findAll(includeInactive);
-        return users.map(user => ({
+        const filteredUsers = users.filter(user => user.rol.nombre !== "administrador");
+
+        return filteredUsers.map(user => ({
             id: user.id,
             name: user.name,
-            email: user.email,
+            email: user.auth?.email ?? "",
             isActive: user.isActive,
             rol: user.rol,
             deletedAt: user.deletedAt
@@ -64,7 +69,7 @@ export class AdminUserUseCase {
         return {
             id: updatedUser.id,
             name: updatedUser.name,
-            email: updatedUser.email,
+            email: updatedUser.auth?.email ?? "",
             isActive: updatedUser.isActive,
             rol: updatedUser.rol,
             deletedAt: updatedUser.deletedAt
@@ -76,8 +81,9 @@ export class AdminUserUseCase {
         await this.userRepository.softDelete(userId);
     }
 
-    // Borrado físico
+    // Borrado físico seguro
     async hardDeleteUser(userId: number): Promise<void> {
+        await this.authRepository.deleteByUserId(userId);
         await this.userRepository.hardDelete(userId);
     }
 
@@ -87,8 +93,8 @@ export class AdminUserUseCase {
         if (!user) return null;
         return {
             id: user.id,
-            name: user.name,   
-            email: user.email,
+            name: user.name,
+            email: user.auth?.email ?? "",
             isActive: user.isActive,
             rol: user.rol,
             deletedAt: user.deletedAt

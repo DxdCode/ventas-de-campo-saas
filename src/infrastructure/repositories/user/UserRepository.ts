@@ -3,9 +3,8 @@ import { DataSource } from "typeorm";
 import { CreateUserWithRoleDTO, UpdateUserStatusDTO } from "@application/dtos/user/UserDTO";
 import { UserEntity } from "@domain/entities/user/UserEntity";
 import { TokenEntity } from "@domain/entities/auth/TokenEntity";
-import { IUserRepository } from "@application/ports/role/IUserRepository";
+import { IUserRepository } from "@application/ports/user/IUserRepository";
 
-// Implementación del repositorio de usuarios y tokens usando TypeORM
 @injectable()
 export class UserRepository implements IUserRepository {
     private userRepo;
@@ -16,18 +15,26 @@ export class UserRepository implements IUserRepository {
         this.tokenRepo = this.dataSource.getRepository(TokenEntity);
     }
 
-    // Crea y guarda un nuevo usuario con rol
     async create(data: CreateUserWithRoleDTO): Promise<UserEntity> {
         const user = this.userRepo.create(data);
         return await this.userRepo.save(user);
     }
 
-    // Busca un usuario por email
     async findByEmail(email: string): Promise<UserEntity | null> {
-        return await this.userRepo.findOne({ where: { email } });
+        const user = await this.userRepo.findOne({
+            where: { auth: { email } },
+            relations: { auth: true, rol: true }
+        });
+        return user;
     }
 
-    async findById(id: number): Promise<UserEntity | null> {
+    async findById(id: number, includeRelations: boolean = true): Promise<UserEntity | null> {
+        if (includeRelations) {
+            return await this.userRepo.findOne({
+                where: { id },
+                relations: { auth: true, rol: true }
+            });
+        }
         return await this.userRepo.findOne({ where: { id } });
     }
 
@@ -48,15 +55,16 @@ export class UserRepository implements IUserRepository {
     async findAll(includeInactive: boolean = false): Promise<UserEntity[]> {
         if (includeInactive) {
             return await this.userRepo.find({
-                withDeleted: true
+                withDeleted: true,
+                relations: { auth: true, rol: true } // cargamos relaciones
             });
         }
         return await this.userRepo.find({
-            where: { isActive: true }
+            where: { isActive: true },
+            relations: { auth: true, rol: true } // cargamos relaciones
         });
     }
 
-    // Agrega un token de refresco para un usuario con fecha de expiración
     async addRefreshToken(userId: number, refreshToken: string, expiracion: Date): Promise<TokenEntity> {
         const token = this.tokenRepo.create({
             refreshToken,
@@ -66,13 +74,15 @@ export class UserRepository implements IUserRepository {
         return await this.tokenRepo.save(token);
     }
 
-    // Elimina un token de refresco específico
     async removeRefreshToken(refreshToken: string): Promise<void> {
         await this.tokenRepo.delete({ refreshToken });
     }
 
-    // Busca un token de refresco por valor
     async findRefreshToken(refreshToken: string): Promise<TokenEntity | null> {
-        return await this.tokenRepo.findOne({ where: { refreshToken } });
+        const tokenEntity = await this.tokenRepo.findOne({
+            where: { refreshToken },
+            relations: { usuario: { auth: true, rol: true } }
+        });
+        return tokenEntity;
     }
 }

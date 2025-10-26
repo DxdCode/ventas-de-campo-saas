@@ -17,7 +17,7 @@ routes.post("/register", validate(registerSchema), authController.register);
 routes.post("/login", validate(loginSchema), authController.login);
 
 // Ruta para refresh token - requiere token válido
-routes.post("/refresh-token", verifyToken, authController.refreshToken);
+routes.post("/refresh-token", authController.refreshToken);
 
 // Ruta para cerrar sesion y eliminar el token - requiere token válido
 routes.post("/logout", verifyToken, authController.logout);

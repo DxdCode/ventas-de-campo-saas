@@ -1,27 +1,44 @@
-import { JwtPayload } from "@infrastructure/services/TokenService";
-import { verifyAccessToken } from "@shared/utils/jwt";
 import { NextFunction, Request, Response } from "express";
+import { container } from "tsyringe";
+import { TokenService, JwtPayload } from "@infrastructure/services/TokenService";
 
-export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
-    const token = req.headers.authorization?.split(" ")[1];
-    
-    if (!token) {
-        return res.status(403).json({ 
-            message: "Acceso denegado: No se proporcionó el token." 
-        });
+const tokenService = container.resolve(TokenService);
+
+export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const accessToken = authHeader?.split(" ")[1];
+
+    if (!accessToken) {
+      return res.status(403).json({ message: "Acceso denegado: No se encontró el access token" });
     }
 
     try {
-        const decoded = verifyAccessToken(token) as JwtPayload;
-        req.user = { 
-            id: decoded.id, 
-            email: decoded.email, 
-            role: decoded.role 
-        };
-        next();
-    } catch (err) {
-        return res.status(403).json({ 
-            message: "Token inválido o expirado." 
-        });
+      // Intentamos verificar el accessToken
+      const decoded = tokenService.verifyAccessToken(accessToken) as JwtPayload;
+      req.user = decoded;
+      return next();
+    } catch (err: any) {
+      if (err.name === "TokenExpiredError") {
+        const { refreshToken } = req.body;
+        if (!refreshToken) {
+          return res.status(403).json({ message: "Access token expirado y no hay refreshToken" });
+        }
+
+        const tokens = await tokenService.verifyAndRefresh(refreshToken);
+
+        const decoded = tokenService.verifyAccessToken(tokens.accessToken) as JwtPayload;
+        req.user = decoded;
+
+        res.setHeader("x-access-token", tokens.accessToken);
+        res.setHeader("x-refresh-token", tokens.refreshToken);
+
+        return next();
+      }
+      throw err;
     }
+  } catch (error: any) {
+    console.error("Error al verificar token:", error);
+    return res.status(403).json({ message: "Token inválido o expirado" });
+  }
 };

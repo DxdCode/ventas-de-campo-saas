@@ -1,7 +1,7 @@
 import { injectable, inject } from "tsyringe";
 import { RoleEntity } from "@domain/entities/user/RoleEntity";
 import { DataSource } from "typeorm";
-import { IRoleRepository } from "@application/ports/user/IRoleRepository";
+import { IRoleRepository } from "@application/ports/role/IRoleRepository";
 
 // Implementación del repositorio de roles usando TypeORM
 @injectable()

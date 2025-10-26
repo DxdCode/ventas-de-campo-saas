@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { container } from "tsyringe";
-import { IUserRepository } from "@application/ports/role/IUserRepository";
+import { IUserRepository } from "@application/ports/user/IUserRepository";
 import { UserRepository } from "@infrastructure/repositories/user/UserRepository";
-import { IRoleRepository } from "@application/ports/user/IRoleRepository";
+import { IRoleRepository } from "@application/ports/role/IRoleRepository";
 import { RoleRepository } from "./repositories/role/RoleRepository";
 
 import { RegisterUserUseCase } from "@application/usecases/auth/RegisterUserUseCase";
@@ -19,6 +19,8 @@ import { IProductRepository } from "@application/ports/product/IProductRepositor
 import { ProductRepository } from "./repositories/product/ProductRepository";
 import { ProductUseCase } from "@application/usecases/product/ProductUseCase";
 
+import { AuthRepository } from "@infrastructure/repositories/auth/AuthRepository";
+import { IAuthRepository } from "@application/ports/user/IAuthRepository";
 
 // Registro de la instancia de la fuente de datos para inyección
 container.registerInstance("DataSource", AppDataSource);
@@ -31,6 +33,10 @@ container.register<IUserRepository>("IUserRepository", {
 container.register<IRoleRepository>("IRoleRepository", {
     useClass: RoleRepository,
 });
+
+
+// Registro de AuthRepository
+container.register("AuthRepository", { useClass: AuthRepository });
 
 // Registro de casos de uso
 container.register(RegisterUserUseCase, {
